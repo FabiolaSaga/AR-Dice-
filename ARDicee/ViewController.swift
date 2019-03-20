@@ -19,7 +19,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
+//        Code for displaying the dots while system detects surface
+//        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
+        
         // Set the view's delegate
         sceneView.delegate = self
         
@@ -77,30 +79,26 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             
             if let hitResult = results.first {
                 //        // Create a new scene
-                let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
-        
-                if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true){
-        
-                diceNode.position = SCNVector3(
-                    hitResult.worldTransform.columns.3.x,
-                    hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius,
-                    hitResult.worldTransform.columns.3.z
-                    )
-                diceArray.append(diceNode)
-                sceneView.scene.rootNode.addChildNode(diceNode)
-                    
-                    //add rotation to the dice ... x & z because those are the ones that would change the face
-               roll(dice: diceNode)
-                }
+                addDice(atLocation: hitResult)
             }
         }
     }
     
-    func rollAll() {
-        if !diceArray.isEmpty {
-            for dice in diceArray {
-                roll(dice: dice)
-            }
+    func addDice(atLocation location: ARHitTestResult) {
+        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
+        
+        if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true){
+            
+            diceNode.position = SCNVector3(
+                x: location.worldTransform.columns.3.x,
+                y: location.worldTransform.columns.3.y + diceNode.boundingSphere.radius,
+                z: location.worldTransform.columns.3.z
+            )
+            diceArray.append(diceNode)
+            sceneView.scene.rootNode.addChildNode(diceNode)
+            
+            //add rotation to the dice ... x & z because those are the ones that would change the face
+            roll(dice: diceNode)
         }
     }
     
@@ -117,13 +115,31 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         )
     }
     
+    func rollAll() {
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                roll(dice: dice)
+            }
+        }
+    }
+    
     @IBAction func rollAgain(_ sender: UIBarButtonItem) {
         rollAll()
+    }
+    
+    @IBAction func removeAllDice(_ sender: UIBarButtonItem) {
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                dice.removeFromParentNode()
+            }
+        }
     }
     
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         rollAll()
     }
+    
+    //MARK: -ARSCNViewDelegateMethod
     // Adding a plane detector
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         if anchor is ARPlaneAnchor {
